@@ -5,12 +5,14 @@
 %define		githash		d4f9c5a
 Summary:	OWASP ModSecurity Core Rule Set (CRS)
 Name:		apache-mod_security_crs
-Version:	%(echo %{gitver} | tr - .)
-Release:	2
+#Version:	%(echo %{gitver} | tr - .)
+Version:	2.2.8
+Release:	1
 License:	ASL 2.0
 Group:		Networking/Daemons/HTTP
-Source0:	https://github.com/SpiderLabs/owasp-modsecurity-crs/tarball/%{githash}/SpiderLabs-owasp-modsecurity-crs-%{gitver}-%{githash}.tar.gz
-# Source0-md5:	ae12b393c8c1af70a2c3d939aa4aafca
+#Source0:	https://github.com/SpiderLabs/owasp-modsecurity-crs/tarball/%{githash}/SpiderLabs-owasp-modsecurity-crs-%{gitver}-%{githash}.tar.gz
+Source0:	https://github.com/SpiderLabs/owasp-modsecurity-crs/archive/%{version}/SpiderLabs-owasp-modsecurity-crs-%{version}.tar.gz
+# Source0-md5:	fdee278c02d41a1377dc20a616b2f327
 URL:		http://www.modsecurity.org/
 BuildRequires:	apache-devel
 BuildRequires:	rpmbuild(macros) >= 1.268
@@ -36,7 +38,8 @@ Requires:       %{name} = %{version}-%{release}
 This package provides supplementary rules for mod_security.
 
 %prep
-%setup -q -n SpiderLabs-owasp-modsecurity-crs-%{githash}
+#%setup -q -n SpiderLabs-owasp-modsecurity-crs-%{githash}
+%setup -q -n owasp-modsecurity-crs-%{version}
 
 %build
 
@@ -64,7 +67,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644,root,root,755)
-%doc CHANGELOG INSTALL LICENSE README.md util
+%doc CHANGES INSTALL LICENSE README.md util
 %config(noreplace) %verify(not md5 mtime size) %{apacheconfdir}/modsecurity.d/activated_rules/*
 %config(noreplace) %verify(not md5 mtime size) %{apacheconfdir}/modsecurity.d/modsecurity_crs_10_config.conf
 %dir %{_datadir}/modsecurity.d
