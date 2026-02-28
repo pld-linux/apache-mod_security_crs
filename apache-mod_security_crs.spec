@@ -7,7 +7,7 @@ Summary:	OWASP ModSecurity Core Rule Set (CRS)
 Name:		apache-mod_security_crs
 #Version:	%(echo %{gitver} | tr - .)
 Version:	2.2.8
-Release:	2
+Release:	3
 License:	ASL 2.0
 Group:		Networking/Daemons/HTTP
 #Source0:	https://github.com/SpiderLabs/owasp-modsecurity-crs/tarball/%{githash}/SpiderLabs-owasp-modsecurity-crs-%{gitver}-%{githash}.tar.gz
@@ -38,7 +38,6 @@ Requires:       %{name} = %{version}-%{release}
 This package provides supplementary rules for mod_security.
 
 %prep
-#%setup -q -n SpiderLabs-owasp-modsecurity-crs-%{githash}
 %setup -q -n owasp-modsecurity-crs-%{version}
 
 %build
