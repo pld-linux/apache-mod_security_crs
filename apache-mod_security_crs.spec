@@ -4,10 +4,12 @@ Summary(pl.UTF-8):	Aktywacja OWASP Core Rule Set dla modułu mod_security Apache
 Name:		apache-mod_security_crs
 # loader layout follows CRS 4 (plugins/*-{config,before,after}.conf), not a CRS release
 Version:	4.0
-Release:	1
+Release:	2
 License:	Apache v2.0
 Group:		Networking/Daemons/HTTP
 Source0:	%{name}.conf
+Source1:	REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+Source2:	RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
 URL:		https://coreruleset.org/
 # crs-setup.conf.example is copied at build time
 BuildRequires:	modsecurity-crs >= 4
@@ -44,6 +46,7 @@ install -d $RPM_BUILD_ROOT%{apacheconfdir}/{conf.d/modsecurity.d,modsecurity-crs
 cp -p %{SOURCE0} $RPM_BUILD_ROOT%{apacheconfdir}/conf.d/modsecurity.d/modsecurity_crs.conf
 # rule 901001 rejects every request unless a setup file is loaded before rules/
 cp -p %{_datadir}/modsecurity-crs/crs-setup.conf.example $RPM_BUILD_ROOT%{apacheconfdir}/modsecurity-crs/crs-setup.conf
+cp -p %{SOURCE1} %{SOURCE2} $RPM_BUILD_ROOT%{apacheconfdir}/modsecurity-crs
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -61,3 +64,5 @@ fi
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{apacheconfdir}/conf.d/modsecurity.d/modsecurity_crs.conf
 %dir %{apacheconfdir}/modsecurity-crs
 %attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{apacheconfdir}/modsecurity-crs/crs-setup.conf
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{apacheconfdir}/modsecurity-crs/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{apacheconfdir}/modsecurity-crs/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
