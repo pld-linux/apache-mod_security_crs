@@ -1,79 +1,63 @@
 %define		apxs		/usr/sbin/apxs
-# Use the following command to verify gitver and githash when updating from master:
-# wget --content-disposition https://github.com/SpiderLabs/owasp-modsecurity-crs/tarball/master
-%define		gitver		2.2.7-21
-%define		githash		d4f9c5a
-Summary:	OWASP ModSecurity Core Rule Set (CRS)
+Summary:	OWASP Core Rule Set activation for Apache mod_security
+Summary(pl.UTF-8):	Aktywacja OWASP Core Rule Set dla modułu mod_security Apache'a
 Name:		apache-mod_security_crs
-#Version:	%(echo %{gitver} | tr - .)
-Version:	2.2.8
-Release:	3
-License:	ASL 2.0
+# loader layout follows CRS 4 (plugins/*-{config,before,after}.conf), not a CRS release
+Version:	4.0
+Release:	1
+License:	Apache v2.0
 Group:		Networking/Daemons/HTTP
-#Source0:	https://github.com/SpiderLabs/owasp-modsecurity-crs/tarball/%{githash}/SpiderLabs-owasp-modsecurity-crs-%{gitver}-%{githash}.tar.gz
-Source0:	https://github.com/SpiderLabs/owasp-modsecurity-crs/archive/%{version}/SpiderLabs-owasp-modsecurity-crs-%{version}.tar.gz
-# Source0-md5:	fdee278c02d41a1377dc20a616b2f327
-URL:		http://www.modsecurity.org/
-BuildRequires:	apache-devel
+Source0:	%{name}.conf
+URL:		https://coreruleset.org/
+# crs-setup.conf.example is copied at build time
+BuildRequires:	modsecurity-crs >= 4
 BuildRequires:	rpmbuild(macros) >= 1.268
-Requires:	apache-mod_security >= 2.7.0
+# thin 90_mod_security.conf loader with IncludeOptional conf.d/modsecurity.d/*.conf
+Requires:	apache-mod_security >= 2.9.14
+Requires:	modsecurity-crs >= 4
+Obsoletes:	apache-mod_security_crs-extras < 4
 BuildArch:	noarch
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
-%define		apacheconfdir	%(%{apxs} -q SYSCONFDIR 2>/dev/null)/conf.d
+%define		apacheconfdir	%(%{apxs} -q SYSCONFDIR 2>/dev/null)
 
 %description
-OWASP ModSecurity Core Rule Set provides generic protection from
-unknown vulnerabilities often found in web applications, which are
-in most cases custom coded. The Core Rules are heavily commented to
-allow it to be used as a step-by-step deployment guide
-for ModSecurity™.
+Loads the OWASP Core Rule Set (modsecurity-crs package) into Apache
+mod_security: CRS setup, plugins and rules in the order CRS requires.
+The CRS setup file for Apache lives in
+/etc/httpd/modsecurity-crs/crs-setup.conf.
 
-%package extras
-Summary:	Supplementary OWASP ModSecurity Core Rule Set (CRS)
-Group:		Networking/Daemons/HTTP
-Requires:       %{name} = %{version}-%{release}
-
-%description    extras
-This package provides supplementary rules for mod_security.
+%description -l pl.UTF-8
+Ładuje OWASP Core Rule Set (pakiet modsecurity-crs) do modułu
+mod_security Apache'a: konfigurację CRS, wtyczki i reguły w kolejności
+wymaganej przez CRS. Plik konfiguracyjny CRS dla Apache'a to
+/etc/httpd/modsecurity-crs/crs-setup.conf.
 
 %prep
-%setup -q -n owasp-modsecurity-crs-%{version}
 
 %build
 
 %install
 rm -rf $RPM_BUILD_ROOT
-install -d $RPM_BUILD_ROOT%{apacheconfdir}/modsecurity.d/activated_rules \
-	$RPM_BUILD_ROOT%{_datadir}/modsecurity.d/base_rules \
-	$RPM_BUILD_ROOT%{_datadir}/modsecurity.d/{optional,experimental,slr}_rules
+install -d $RPM_BUILD_ROOT%{apacheconfdir}/{conf.d/modsecurity.d,modsecurity-crs}
 
-install modsecurity_crs_10_setup.conf.example $RPM_BUILD_ROOT%{apacheconfdir}/modsecurity.d/modsecurity_crs_10_config.conf
-install base_rules/* $RPM_BUILD_ROOT%{_datadir}/modsecurity.d/base_rules/
-
-install optional_rules/* $RPM_BUILD_ROOT%{_datadir}/modsecurity.d/optional_rules/
-install experimental_rules/* $RPM_BUILD_ROOT%{_datadir}/modsecurity.d/experimental_rules/
-install slr_rules/* $RPM_BUILD_ROOT%{_datadir}/modsecurity.d/slr_rules
-
-# activate base_rules
-cd $RPM_BUILD_ROOT/%{_datadir}/modsecurity.d/base_rules
-for f in * ; do
-	ln -s %{_datadir}/modsecurity.d/base_rules/$f $RPM_BUILD_ROOT%{apacheconfdir}/modsecurity.d/activated_rules/$f
-done
+cp -p %{SOURCE0} $RPM_BUILD_ROOT%{apacheconfdir}/conf.d/modsecurity.d/modsecurity_crs.conf
+# rule 901001 rejects every request unless a setup file is loaded before rules/
+cp -p %{_datadir}/modsecurity-crs/crs-setup.conf.example $RPM_BUILD_ROOT%{apacheconfdir}/modsecurity-crs/crs-setup.conf
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+%post
+%service -q httpd restart
+
+%postun
+if [ "$1" = "0" ]; then
+	%service -q httpd restart
+fi
+
 %files
 %defattr(644,root,root,755)
-%doc CHANGES INSTALL LICENSE README.md util
-%config(noreplace) %verify(not md5 mtime size) %{apacheconfdir}/modsecurity.d/activated_rules/*
-%config(noreplace) %verify(not md5 mtime size) %{apacheconfdir}/modsecurity.d/modsecurity_crs_10_config.conf
-%dir %{_datadir}/modsecurity.d
-%{_datadir}/modsecurity.d/base_rules
-
-%files extras
-%defattr(644,root,root,755)
-%{_datadir}/modsecurity.d/optional_rules
-%{_datadir}/modsecurity.d/experimental_rules
-%{_datadir}/modsecurity.d/slr_rules
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{apacheconfdir}/conf.d/modsecurity.d/modsecurity_crs.conf
+%dir %{apacheconfdir}/modsecurity-crs
+%attr(640,root,root) %config(noreplace) %verify(not md5 mtime size) %{apacheconfdir}/modsecurity-crs/crs-setup.conf
